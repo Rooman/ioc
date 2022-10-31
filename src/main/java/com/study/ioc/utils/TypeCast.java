@@ -2,6 +2,7 @@ package com.study.ioc.utils;
 
 import java.util.Objects;
 
+@SuppressWarnings("unchecked")
 public class TypeCast {
 
     public static  <T> T cast(Class<T> clazz, String value) {

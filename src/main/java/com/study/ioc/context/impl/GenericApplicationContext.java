@@ -43,10 +43,12 @@ public class GenericApplicationContext implements ApplicationContext {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getBean(Class<T> clazz) {
         List<Bean> beansValues = beans.values().stream().toList();
         List<Bean> result = beansValues.stream()
-                .filter(bean -> Objects.equals(bean.getValue().getClass(), clazz)).toList();
+                .filter(bean -> Objects.equals(bean.getValue().getClass(), clazz))
+                .toList();
         if (result.size() > 1) {
             throw new NoUniqueBeanOfTypeException("No unique bean of type " + clazz.getName());
         }
@@ -54,6 +56,7 @@ public class GenericApplicationContext implements ApplicationContext {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getBean(String id, Class<T> clazz) {
         Bean bean = beans.get(id);
         if (Objects.equals(bean.getValue().getClass(), clazz)) {
@@ -71,7 +74,8 @@ public class GenericApplicationContext implements ApplicationContext {
         Map<String, Bean> beansMap = new HashMap<>();
         beanDefinitionMap.forEach((beanId, beanDefinition) -> {
             try {
-                beansMap.put(beanId, new Bean(beanId, Class.forName(beanDefinition.getClassName()).getDeclaredConstructor().newInstance()));
+                Object beanValue = Class.forName(beanDefinition.getClassName()).getDeclaredConstructor().newInstance();
+                beansMap.put(beanId, new Bean(beanId, beanValue));
             } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 throw new BeanInstantiationException(e.getMessage(), e);
             }
@@ -80,21 +84,17 @@ public class GenericApplicationContext implements ApplicationContext {
     }
 
     void injectValueDependencies(Map<String, BeanDefinition> beanDefinitions, Map<String, Bean> beans) {
-        List<Bean> beansValues = beans.values().stream().toList();
+        List<Bean> listBeans = beans.values().stream().toList();
 
-        for (Bean currentBean : beansValues) {
+        for (Bean currentBean : listBeans) {
             BeanDefinition beanDefinition = beanDefinitions.get(currentBean.getId());
-            if (beanDefinition == null) {
-                continue;
-            }
-
             Map<String, String> valueDependencies = beanDefinition.getValueDependencies();
             valueDependencies.forEach((name, value) -> {
                 try {
-                    Object beanValue = currentBean.getValue();
-                    Class<?> valueType = beanValue.getClass().getDeclaredField(name).getType();
-                    Method injectMethod = beanValue.getClass().getDeclaredMethod(getSetterName(name), valueType);
-                    injectValue(beanValue, injectMethod, value);
+                    Object bean = currentBean.getValue();
+                    Class<?> valueType = bean.getClass().getDeclaredField(name).getType();
+                    Method injectMethod = bean.getClass().getDeclaredMethod(getSetterName(name), valueType);
+                    injectValue(bean, injectMethod, value);
                 } catch (ReflectiveOperationException e) {
                     throw new NotWritablePropertyException(e.getMessage(), e);
                 }
@@ -104,24 +104,22 @@ public class GenericApplicationContext implements ApplicationContext {
     }
 
     void injectRefDependencies(Map<String, BeanDefinition> beanDefinitions, Map<String, Bean> beans) {
-        List<Bean> beansValues = beans.values().stream().toList();
-        for (Bean currentBean : beansValues) {
+        List<Bean> listBeans = beans.values().stream().toList();
+        for (Bean currentBean : listBeans) {
             BeanDefinition beanDefinition = beanDefinitions.get(currentBean.getId());
-            if (beanDefinition == null) {
-                continue;
-            }
-
             Map<String, String> refDependencies = beanDefinition.getRefDependencies();
-            refDependencies.forEach((name, beanRefId) -> {
-                Bean refBean = beans.get(beanRefId);
-                Object beanValue = currentBean.getValue();
-                try {
-                    Method injectMethod = beanValue.getClass().getDeclaredMethod(getSetterName(name), getBeanClassType(refBean));
-                    injectMethod.invoke(beanValue, refBean.getValue());
-                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                    throw new NotWritablePropertyException(e.getMessage(), e);
-                }
-            });
+            if(refDependencies!=null) {
+                refDependencies.forEach((name, beanRefId) -> {
+                    Bean refBean = beans.get(beanRefId);
+                    Object bean = currentBean.getValue();
+                    try {
+                        Method injectMethod = bean.getClass().getDeclaredMethod(getSetterName(name), getBeanClassType(refBean));
+                        injectMethod.invoke(bean, refBean.getValue());
+                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                        throw new NotWritablePropertyException(e.getMessage(), e);
+                    }
+                });
+            }
         }
     }
 

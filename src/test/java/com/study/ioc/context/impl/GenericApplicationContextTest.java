@@ -215,10 +215,12 @@ public class GenericApplicationContextTest {
 
         //  setMailService(mailServicePOP) via refDependencies
         BeanDefinition userServiceBeanDefinition = new BeanDefinition("userService", "com.study.entity.DefaultUserService");
+        BeanDefinition mailServiceBeanDefinition = new BeanDefinition("mailServicePOP", "com.study.entity.MailService");
         Map<String, String> userServiceRefDependencies = new HashMap<>();
         userServiceRefDependencies.put("mailService", "mailServicePOP");
         userServiceBeanDefinition.setRefDependencies(userServiceRefDependencies);
         beanDefinitionMap.put("userService", userServiceBeanDefinition);
+        beanDefinitionMap.put("mailServicePOP", mailServiceBeanDefinition);
 
         genericApplicationContext.injectRefDependencies(beanDefinitionMap, beanMap);
         assertNotNull(userService.getMailService());
@@ -241,10 +243,12 @@ public class GenericApplicationContextTest {
 
         //  setMailService(mailServicePOP) via refDependencies
         BeanDefinition userServiceBeanDefinition = new BeanDefinition("userService", "com.study.entity.UserServiceWithoutSetters");
+        BeanDefinition mailServiceBeanDefinition = new BeanDefinition("mailServicePOP", "com.study.entity.MailService");
         Map<String, String> userServiceRefDependencies = new HashMap<>();
         userServiceRefDependencies.put("mailService", "mailServicePOP");
         userServiceBeanDefinition.setRefDependencies(userServiceRefDependencies);
         beanDefinitionMap.put("userService", userServiceBeanDefinition);
+        beanDefinitionMap.put("mailServicePOP", mailServiceBeanDefinition);
 
         genericApplicationContext.injectRefDependencies(beanDefinitionMap, beanMap);
     }
@@ -263,10 +267,12 @@ public class GenericApplicationContextTest {
 
         //  setMailService(mailServicePOP) via refDependencies
         BeanDefinition workServiceBeanDefinition = new BeanDefinition("workService", "com.study.entity.WorkService");
+        BeanDefinition employeeServiceBeanDefinition = new BeanDefinition("employeeService", "com.study.entity.EmployeeService");
         Map<String, String> workServiceRefDependencies = new HashMap<>();
         workServiceRefDependencies.put("employeeService", "employeeService");
         workServiceBeanDefinition.setRefDependencies(workServiceRefDependencies);
         beanDefinitionMap.put("workService", workServiceBeanDefinition);
+        beanDefinitionMap.put("employeeService", employeeServiceBeanDefinition);
 
         genericApplicationContext.injectRefDependencies(beanDefinitionMap, beanMap);
         assertNotNull(workService.getEmployeeService());
