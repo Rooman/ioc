@@ -1,12 +1,12 @@
 package com.study.ioc.context.impl;
 
-import com.study.entity.DefaultUserService;
-import com.study.entity.MailService;
+import com.study.entity.*;
 import com.study.ioc.entity.Bean;
 import com.study.ioc.entity.BeanDefinition;
 import com.study.ioc.exception.BeanInstantiationException;
 import com.study.ioc.exception.NoSuchBeanDefinitionException;
 import com.study.ioc.exception.NoUniqueBeanOfTypeException;
+import com.study.ioc.exception.NotWritablePropertyException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -171,6 +171,35 @@ public class GenericApplicationContextTest {
         assertEquals("IMAP", mailServiceIMAP.getProtocol());
     }
 
+    @Test(expected = NotWritablePropertyException.class)
+    public void testInjectValueDependenciesThrowsException() {
+        Map<String, Bean> beanMap = new HashMap<>();
+        Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
+
+        MailServiceWithoutSetters mailServicePOP = new MailServiceWithoutSetters();
+        beanMap.put("mailServicePOP", new Bean("mailServicePOP", mailServicePOP));
+        MailServiceWithoutSetters mailServiceIMAP = new MailServiceWithoutSetters();
+        beanMap.put("mailServiceIMAP", new Bean("mailServiceIMAP", mailServiceIMAP));
+
+        //  setPort(110) and setProtocol("POP3") via valueDependencies
+        BeanDefinition popServiceBeanDefinition = new BeanDefinition("mailServicePOP", "com.study.entity.MailService");
+        Map<String, String> popServiceValueDependencies = new HashMap<>();
+        popServiceValueDependencies.put("port", "110");
+        popServiceValueDependencies.put("protocol", "POP3");
+        popServiceBeanDefinition.setValueDependencies(popServiceValueDependencies);
+        beanDefinitionMap.put("mailServicePOP", popServiceBeanDefinition);
+
+        //  setPort(143) and setProtocol("IMAP") via valueDependencies
+        BeanDefinition imapServiceBeanDefinition = new BeanDefinition("mailServiceIMAP", "com.study.entity.MailService");
+        Map<String, String> imapServiceValueDependencies = new HashMap<>();
+        imapServiceValueDependencies.put("port", "143");
+        imapServiceValueDependencies.put("protocol", "IMAP");
+        imapServiceBeanDefinition.setValueDependencies(imapServiceValueDependencies);
+        beanDefinitionMap.put("mailServiceIMAP", imapServiceBeanDefinition);
+
+        genericApplicationContext.injectValueDependencies(beanDefinitionMap, beanMap);
+    }
+
     @Test
     public void testInjectRefDependencies() {
         Map<String, Bean> beanMap = new HashMap<>();
@@ -186,15 +215,68 @@ public class GenericApplicationContextTest {
 
         //  setMailService(mailServicePOP) via refDependencies
         BeanDefinition userServiceBeanDefinition = new BeanDefinition("userService", "com.study.entity.DefaultUserService");
+        BeanDefinition mailServiceBeanDefinition = new BeanDefinition("mailServicePOP", "com.study.entity.MailService");
         Map<String, String> userServiceRefDependencies = new HashMap<>();
         userServiceRefDependencies.put("mailService", "mailServicePOP");
         userServiceBeanDefinition.setRefDependencies(userServiceRefDependencies);
         beanDefinitionMap.put("userService", userServiceBeanDefinition);
+        beanDefinitionMap.put("mailServicePOP", mailServiceBeanDefinition);
 
         genericApplicationContext.injectRefDependencies(beanDefinitionMap, beanMap);
         assertNotNull(userService.getMailService());
         assertEquals(110, ((MailService) userService.getMailService()).getPort());
         assertEquals("POP3", ((MailService) userService.getMailService()).getProtocol());
+    }
+
+    @Test(expected = NotWritablePropertyException.class)
+    public void testInjectRefDependenciesThrowsException() {
+        Map<String, Bean> beanMap = new HashMap<>();
+        Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
+
+        MailService mailServicePOP = new MailService();
+        mailServicePOP.setPort(110);
+        mailServicePOP.setProtocol("POP3");
+        beanMap.put("mailServicePOP", new Bean("mailServicePOP", mailServicePOP));
+
+        UserServiceWithoutSetters userService = new UserServiceWithoutSetters();
+        beanMap.put("userService", new Bean("userService", userService));
+
+        //  setMailService(mailServicePOP) via refDependencies
+        BeanDefinition userServiceBeanDefinition = new BeanDefinition("userService", "com.study.entity.UserServiceWithoutSetters");
+        BeanDefinition mailServiceBeanDefinition = new BeanDefinition("mailServicePOP", "com.study.entity.MailService");
+        Map<String, String> userServiceRefDependencies = new HashMap<>();
+        userServiceRefDependencies.put("mailService", "mailServicePOP");
+        userServiceBeanDefinition.setRefDependencies(userServiceRefDependencies);
+        beanDefinitionMap.put("userService", userServiceBeanDefinition);
+        beanDefinitionMap.put("mailServicePOP", mailServiceBeanDefinition);
+
+        genericApplicationContext.injectRefDependencies(beanDefinitionMap, beanMap);
+    }
+
+    @Test
+    public void testInjectRefDependenciesWithClassWithoutInterface() {
+        Map<String, Bean> beanMap = new HashMap<>();
+        Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
+
+        EmployeeService employeeService = new EmployeeService();
+        employeeService.setEmployee("Tom");
+        beanMap.put("employeeService", new Bean("employeeService", employeeService));
+
+        WorkService workService = new WorkService();
+        beanMap.put("workService", new Bean("workService", workService));
+
+        //  setMailService(mailServicePOP) via refDependencies
+        BeanDefinition workServiceBeanDefinition = new BeanDefinition("workService", "com.study.entity.WorkService");
+        BeanDefinition employeeServiceBeanDefinition = new BeanDefinition("employeeService", "com.study.entity.EmployeeService");
+        Map<String, String> workServiceRefDependencies = new HashMap<>();
+        workServiceRefDependencies.put("employeeService", "employeeService");
+        workServiceBeanDefinition.setRefDependencies(workServiceRefDependencies);
+        beanDefinitionMap.put("workService", workServiceBeanDefinition);
+        beanDefinitionMap.put("employeeService", employeeServiceBeanDefinition);
+
+        genericApplicationContext.injectRefDependencies(beanDefinitionMap, beanMap);
+        assertNotNull(workService.getEmployeeService());
+        assertEquals("Tom", (workService.getEmployeeService().getEmployee()));
     }
 
     @Test
@@ -204,5 +286,33 @@ public class GenericApplicationContextTest {
         genericApplicationContext.injectValue(mailService, setPortMethod, "465");
         int actualPort = mailService.getPort();
         assertEquals(465, actualPort);
+    }
+
+    @Test
+    public void getBeanClassTypeReturnInterface() {
+        DefaultUserService defaultUserService = new DefaultUserService();
+        Bean bean = new Bean("userService", defaultUserService);
+        Class<?> beanClassType = genericApplicationContext.getBeanClassType(bean);
+        assertEquals(beanClassType.getName(), "com.study.entity.UserService");
+    }
+
+    @Test
+    public void getBeanClassTypeReturnClass() {
+        WorkService workService = new WorkService();
+        Bean bean = new Bean("workService", workService);
+        Class<?> beanClassType = genericApplicationContext.getBeanClassType(bean);
+        assertEquals(beanClassType.getName(), "com.study.entity.WorkService");
+    }
+
+    @Test
+    public void genericApplicationContextTestConstructorWithPath() {
+        GenericApplicationContext genericApplicationContext = new GenericApplicationContext("context.xml");
+
+        DefaultUserService userService = (DefaultUserService) genericApplicationContext.getBean("userService");
+        MailService mailService = genericApplicationContext.getBean("mailServiceIMAP", MailService.class);
+        assertNotNull(userService.getMailService());
+
+        assertEquals(mailService.getPort(), 143);
+        assertEquals(mailService.getProtocol(), "IMAP");
     }
 }
