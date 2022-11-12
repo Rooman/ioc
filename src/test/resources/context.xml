@@ -2,21 +2,33 @@
 <beans>
     <!-- Class <?> clazz =  Class.forName (className)-->
     <!-- clazz.newInstance() -->
-    <bean id="mailServicePOP" class="com.study.entity.MailService">
+    <bean id="mailServicePOP" class="com.onoprienko.ioc.entity.MailService">
         <property name="port" value="995"/>
         <property name="protocol" value="POP3"/>
     </bean>
 
-    <bean id="userService" class="com.study.entity.DefaultUserService">
+    <bean id="userService" class="com.onoprienko.ioc.entity.DefaultUserService">
         <property name="mailService" ref="mailServicePOP"/>
     </bean>
 
-    <bean id="mailServiceIMAP" class="com.study.entity.MailService">
+    <bean id="mailServiceIMAP" class="com.onoprienko.ioc.entity.MailService">
         <property name="port" value="143"/>
         <property name="protocol" value="IMAP"/>
     </bean>
 
-    <bean id="userServiceImap" class="com.study.entity.DefaultUserService">
+    <bean id="userServiceImap" class="com.onoprienko.ioc.entity.DefaultUserService">
         <property name="mailService" ref="mailServiceIMAP"/>
     </bean>
+
+    <bean id="employeeService" class="com.onoprienko.ioc.entity.EmployeeService">
+        <property name="employee" value="Jake"/>
+    </bean>
+
+    <bean id="deleteService" class="com.onoprienko.ioc.entity.DeleteService"/>
+
+    <!--    system beans-->
+    <bean id="beanFactoryPostProcessor" class="com.onoprienko.ioc.processor.impl.CustomBeanFactoryPostProcessor"/>
+
+    <bean id="beanPostProcessor" class="com.onoprienko.ioc.processor.impl.CustomBeanPostProcessor"/>
+
 </beans>
