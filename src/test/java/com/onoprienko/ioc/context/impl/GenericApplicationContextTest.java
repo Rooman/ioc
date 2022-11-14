@@ -10,7 +10,6 @@ import com.onoprienko.ioc.processor.impl.CustomBeanPostProcessor;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -320,17 +319,6 @@ public class GenericApplicationContextTest {
         assertEquals(newEmployeeService.getSalary(), 1200);
     }
 
-    @Test
-    public void runPostConstruct() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        GenericApplicationContext genericApplicationContext = new GenericApplicationContext("context.xml");
-        Bean bean = new Bean("newEmployee", new NewEmployeeService("Anna", 600));
-        Method getMethod = bean.getValue().getClass().getDeclaredMethod("getSalary");
-        int oldSalary = (int) getMethod.invoke(bean.getValue());
-        assertEquals(oldSalary, 600);
-        genericApplicationContext.runPostConstruct(bean);
-        int newSalary = (int) getMethod.invoke(bean.getValue());
-        assertEquals(newSalary, 800);
-    }
 
     @Test
     public void getSystemBeans() {

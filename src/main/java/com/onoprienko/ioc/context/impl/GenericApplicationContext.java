@@ -1,6 +1,5 @@
 package com.onoprienko.ioc.context.impl;
 
-import com.onoprienko.ioc.annotation.PostConstruct;
 import com.onoprienko.ioc.context.ApplicationContext;
 import com.onoprienko.ioc.entity.Bean;
 import com.onoprienko.ioc.entity.BeanDefinition;
@@ -59,9 +58,6 @@ public class GenericApplicationContext implements ApplicationContext {
                 systemBeans.getBeanPostProcessors().forEach(beanPostProcessor
                         -> beanPostProcessor.postProcessBeforeInitialization(bean, id))
         );
-
-        log.info("Run initialization with @PostConstruct");
-        beans.forEach((s, bean) -> runPostConstruct(bean));
 
         log.info("Run post process after initialization");
         beans.forEach((id, bean) ->
@@ -186,18 +182,6 @@ public class GenericApplicationContext implements ApplicationContext {
         }
         return interfaces[0];
     }
-
-
-    @SneakyThrows
-    void runPostConstruct(Bean bean) {
-        Class<?> clazz = bean.getValue().getClass();
-        for (Method method : clazz.getMethods()) {
-            if (method.isAnnotationPresent(PostConstruct.class)) {
-                method.invoke(bean.getValue());
-            }
-        }
-    }
-
 
     @SneakyThrows
     SystemBeans getSystemBeans(Map<String, BeanDefinition> beanDefinitions) {

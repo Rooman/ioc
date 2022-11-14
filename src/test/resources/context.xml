@@ -30,5 +30,6 @@
     <bean id="beanFactoryPostProcessor" class="com.onoprienko.ioc.processor.impl.CustomBeanFactoryPostProcessor"/>
 
     <bean id="beanPostProcessor" class="com.onoprienko.ioc.processor.impl.CustomBeanPostProcessor"/>
+    <bean id="postConstructBeanPostProcessor" class="com.onoprienko.ioc.processor.impl.PostConstructBeanPostProcessor"/>
 
 </beans>
